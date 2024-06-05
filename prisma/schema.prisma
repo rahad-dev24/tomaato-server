@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PayMethod {
+  Cash
+  Bkash
+
+  CreditCard
+}
+
+enum Area {
+  savar
+  uttora
+  DEPZ
+}
+
+model Product {
+  product_Id             String               @id @default(uuid())
+  product_name           String               @unique
+  product_description    String?
+  product_usages         String?
+  product_weight         String?
+  // Image                  Image[]
+  product_category       Product_category?    @relation(fields: [product_category_Id], references: [category_Id])
+  product_category_Id    String?
+  product_subcategory    Product_subcategory? @relation(fields: [product_subcategory_Id], references: [subcategory_Id])
+  product_subcategory_Id String?
+  Brand                  Brand?               @relation(fields: [product_brand_Id], references: [brand_Id])
+  product_brand_Id       String?
+  Purchase               Purchase[]
+  Sales                  Sales[]
+  // Image                  Image[]
+
+  @@index([product_name, product_Id])
+}
+
+model Purchase {
+  product_purchase_Id           String   @id @default(uuid())
+  purchased_product_Id          String
+  product                       Product  @relation(fields: [purchased_product_Id], references: [product_Id])
+  product_price_per_pcs         String
+  product_net_purchase_quantity String
+  product_net_purchase_price    String
+  Profit_margin_per_piece       String?
+  product_purchase_date         DateTime @default(now())
+  product_in_stock              String?
+  product_manufacturing_date    String?
+  product_expiry_date           String?
+  product_moved_to_shelf        Boolean  @default(true)
+  soldOut                       Boolean  @default(false)
+  supplier                      Supplier @relation(fields: [seller_Id], references: [supplier_Id])
+  seller_Id                     String
+  Store                         Store    @relation(fields: [buyer_store_Id], references: [store_Id])
+  buyer_store_Id                String
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+}
+
+model Supplier {
+  supplier_Id         String     @id @default(uuid())
+  supplier_name       String
+  supplier_email      String?
+  supplier_phone      String
+  supplier_store_name String
+  supplier_area       Area       @default(savar)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  Purchase            Purchase[]
+}
+
+model Store {
+  store_Id    String     @id @default(uuid())
+  store_name  String
+  store_email String?
+  store_code  Int        @unique @default(autoincrement())
+  store_area  Area       @default(savar)
+  Purchase    Purchase[]
+
+  @@index([store_code])
+}
+
+model Brand {
+  brand_Id   String    @id @default(uuid())
+  brand_name String    @unique
+  product    Product[]
+
+  @@index([brand_name])
+}
+
+model Product_category {
+  category_Id          String                @id @default(uuid())
+  category_name        String
+  category_description String
+  subcategory          Product_subcategory[]
+  product              Product[]
+}
+
+model Product_subcategory {
+  subcategory_Id          String           @id @default(uuid())
+  subcategory_name        String
+  subcategory_description String
+  Product_category        Product_category @relation(fields: [product_category_Id], references: [category_Id])
+  product_category_Id     String
+  product                 Product[]
+}
+
+model Image {
+  image_Id          String  @id @default(uuid())
+  filename          String?
+  mimetype          String?
+  encoding          String?
+  image_description String?
+}
+
+model Customer {
+  customer_Id       String    @id @default(uuid())
+  customer_name     String
+  customer_phone    String    @unique
+  customer_email    String?   @unique
+  customer_DOB      DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  customer_area     Area      @default(savar)
+  customer_password String
+  role              Role      @default(customer)
+
+  Sales Sales[]
+
+  @@index([customer_phone, customer_email])
+}
+
+enum Role {
+  customer
+  admin
+  staff
+  manager
+  ceo
+}
+
+model Sales {
+  sale_Id        String    @id @default(uuid())
+  customer       Customer  @relation(fields: [customer_Id], references: [customer_Id])
+  customer_Id    String
+  sale_date      DateTime  @default(now())
+  product        Product   @relation(fields: [product_Id], references: [product_Id])
+  product_Id     String
+  product_pcs    Int
+  sale_net_price String
+  canceled_order Boolean
+  refunded_order Boolean
+  payed_with     PayMethod @default(Cash)
+}
+
+model admin {
+  admin_Id       String   @id @default(uuid())
+  admin_name     String
+  admin_phone    String   @unique
+  admin_email    String   @unique
+  admin_password String
+  role           Role     @default(admin)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now())
+}
+
+model staff {
+  staff_Id       String   @id @default(uuid())
+  staff_name     String
+  staff_phone    String   @unique
+  staff_email    String   @unique
+  staff_password String
+  store_code     String
+  role           Role     @default(staff)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now())
+}
+
+model manager {
+  manager_Id       String   @id @default(uuid())
+  manager_name     String
+  manager_phone    String   @unique
+  manager_email    String   @unique
+  manager_password String
+  store_code       String
+  role             Role     @default(manager)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now())
+}
+
+model ceo {
+  ceo_Id       String   @id @default(uuid())
+  ceo_name     String
+  ceo_phone    String   @unique
+  ceo_email    String   @unique
+  ceo_password String
+  role         Role     @default(ceo)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now())
+}
